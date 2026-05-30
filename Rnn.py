@@ -54,6 +54,21 @@ def plot_results(training_accuracies, training_losses, testing_accuracies, testi
     plt.tight_layout()
     plt.show()
 
+    
+def get_rnn(num_layers=1, emb_size=64, h_size=64):
+        inputs = tf.keras.layers.Input(shape=(1,), dtype=tf.string, name='txt_input') # ['awesome movie']
+        x = vectorizer(inputs) # [1189, 18, 0, 0, 0, 0, ...]
+        x = tf.keras.layers.Embedding(input_dim=len(vectorizer.get_vocabulary()),output_dim=emb_size, name='word_embeddings',mask_zero=True)(x)
+        for n in range(num_layers):
+            if n != num_layers - 1:
+                x = tf.keras.layers.SimpleRNN(units=h_size, name=f'rnn_cell_{n}', return_sequences=True)(x)
+            else:
+                x = tf.keras.layers.SimpleRNN(units=h_size, name=f'rnn_cell_{n}')(x)
+
+        x = tf.keras.layers.Dropout(rate=0.5)(x)
+        o = tf.keras.layers.Dense(units=1, activation='sigmoid', name='lr')(x)
+        return tf.keras.models.Model(inputs=inputs, outputs=o, name='simple_rnn')
+
 # Main execution
 start_time = time.time()
 warnings.filterwarnings("ignore")
@@ -106,20 +121,6 @@ for k in range(0,5):
 
     dummy_embeddings = tf.keras.layers.Embedding(1000, 5)
     dummy_embeddings(tf.constant([1, 2, 3])).numpy()
-
-    def get_rnn(num_layers=1, emb_size=64, h_size=64):
-        inputs = tf.keras.layers.Input(shape=(1,), dtype=tf.string, name='txt_input') # ['awesome movie']
-        x = vectorizer(inputs) # [1189, 18, 0, 0, 0, 0, ...]
-        x = tf.keras.layers.Embedding(input_dim=len(vectorizer.get_vocabulary()),output_dim=emb_size, name='word_embeddings',mask_zero=True)(x)
-        for n in range(num_layers):
-            if n != num_layers - 1:
-                x = tf.keras.layers.SimpleRNN(units=h_size, name=f'rnn_cell_{n}', return_sequences=True)(x)
-            else:
-                x = tf.keras.layers.SimpleRNN(units=h_size, name=f'rnn_cell_{n}')(x)
-
-        x = tf.keras.layers.Dropout(rate=0.5)(x)
-        o = tf.keras.layers.Dense(units=1, activation='sigmoid', name='lr')(x)
-        return tf.keras.models.Model(inputs=inputs, outputs=o, name='simple_rnn')
 
     imdb_rnn = get_rnn()
 
